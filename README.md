@@ -1,74 +1,71 @@
 # Versioned Markdown (VMD)
 
-Versioned Markdown is a markdown specification aimed at defining a markdown
-standard tailored for group collaboration on documentation in the context of
-version control systems (i.e. git.) A key component of this project will be
-a formatting tool, similar to `go fmt`, which can read almost any markdown
-robustly and output a stable and consistent format.
+Versioned Markdown is a 
+[markdown](https://en.wikipedia.org/wiki/Markdown) specification tailored
+group collaboration on documents. A key component of this project will be
+a formatting tool, similar to `go fmt`, which can read markdown input with the
+[blackfriday.v2](https://github.com/russross/blackfriday/tree/v2) markdown
+library, and re-render the markdown in a stable, consistent format.
 
-## Elements of markdown
+## Elements of Versioned Markdown
 
 Before we give the the example format we must define the elements of the 
-markdown format. They are as follows:
+Versioned Markdown format. They are as follows:
 
 - **Paragraphs:** which can be any series of string tokens, including basic 
   strings of text (words and punctuation) as well as intermixed `code` text,
-  *emphasis* text, **strong** text, and [links](https://example.com/),
+  *emphasis* text, **bold** text, and [links](https://example.com/),
   sperated by very forgiving whitespaces, which cannot extend over
-  a blank newline. These lines are treated as an array of tokens, with all
-  whitspace rendered as a single space.
-- **Headings:** which may only contain a simple title string, and a heading
-  level.
+  a blank newline. These lines are treated as a list of string tokens, with 
+  all whitspace rendered as a single space.
+- **Headings:** which may only contain plain text title, 
 - **Quote Blocks:** which are treated the same as paragpraphs, but enclosed in 
   a special formatting, to indent them inward in the final document.
 - **Code Blocks:** which simply present their content verbatin.
-- **Lists:** which format sub-paragraphs in an ordered fashion, and may contain
-  sublists.
+- **Lists:** which are an ordered container for paragraphs, and may also
+  contain sub-lists.
 - **Tables:** which present paragraphs in a fomatted grid by the renderer.
 
-Each element of markdown **must** have one blank line between it and another
-element in the output format.
-
-> It is important to note that each of these elements, except for paragraphs,
-> may only appear on the top level of the document, and may not be embedded 
-> inside eachother.
+Each of these elements *must* have one blank line between it and another
+element in the output format (excluding links and inline formatting inside
+a paragraph) and aside from paragraphs, none of these elements may be nested
+inside of one another.
 
 ## Markdown style guide
 
 This is a basic specification of the Versioned Markdown ouput format.
 
+### Paragraphs
+
+Paragraphs are formatted as a collection of words and inline formatting blocks,
+rendered with a single space between each token, and wrapped at an arbitrary
+column limit (the default is 80 columns).
+
 ### Headings are simple
 
-The parser emits heading nodes with heading level and text content. Headings
-will only be rendered in `ATX Heading` format, So they will be rendered as:
+Headings will only be rendered in `ATX Heading` format, So they will be
+rendered as:
 
 ```
 # <heading level 1 text>
+```
 
+or
+
+```
 ## <heading level 2 text>
 ```
 
-### Paragraphs
-
-Paragraphs are a list of elementary text nodes. Each word, link, empasis, etc.
-may be emitted as a string and tokenized. These tokens are then emmited, and
-wrapped at the column limit, forming stable paragraphs of text. Paragraphs 
-are valid on their own at the top level of the document, as well as in the 
-bodies of list items, and table cells.
-
 ### Block quotes
 
-Block quotes are parsed as a `BlockQuote` node and will be handled in the 
-same way as paragraphs, with the exception that a `>` followed by a space will
-be written at the beginning of every line.
+Block quotes are treated almost identically to paragraphs, except that each
+line will begin with a '>' and a single space before the text begins.
 
 > Note: lists are not supported in block quotes.
 
 ### Code Blocks
 
-Code blocks are very simple. The only output format accepted is the `backtick`
-format, shown as follows:
-
+The only output format accepted is the `backtick` format, shown as follows:
 
 ``````
 ```
@@ -84,8 +81,10 @@ Code block example:
 The text inside is passed on verbatim.
 ```
 
-To include the backtick escape sequence inside a codeblock, the codeblock
-must have more backticks than any backtick sequence contained inside.
+To include backtick fences inside a codeblock, the opening fence must have
+more backticks than any backtick sequence contained inside. The reference
+implementation will use the same length of fence as is parsed, for
+simplicity.
 
 
 `````````
@@ -126,7 +125,6 @@ Tables have the following stable output format:
 > Note: tables are an exception to the line wrapping rule. Their formatting
 > may require them to be longer than an arbitrary limit.
 
-
 ### Links
 
 Links are simple and have two representations.
@@ -157,14 +155,12 @@ as:
 
 ### Lists
 
-Markdown lists have two forms: ordered and unordered. They share very common
-syntax and may be nested together.
-
 Unordered list items start with a `-` and a space, and continue with two
 columns of indentation if a line wraps or a sublist is to be started.
 
 ```
-- potato - potato
+- potato
+- potato
   - tomato
   - tomato
 ```
@@ -182,7 +178,7 @@ three columns of indentation if a line wraps, or a sublist is to be started.
 1. two
 1. three
    1. uno
-   2. dos
+   1. dos
 ```
 
 1. one
@@ -196,15 +192,13 @@ three columns of indentation if a line wraps, or a sublist is to be started.
 > let the renderer handle indexing of items.
 
 The one last feature of lists is that they can be added to eachother, but
-an ordered list may only contain ordered items, while child lists may be 
+an ordered list may only contain ordered items, while sub-lists may be 
 of another, homogenous type.
 
 ```
 1. one
    - uno 
-     - spanish
    - un
-     - french
 2. two
    - dos
    - deux
@@ -215,9 +209,7 @@ of another, homogenous type.
 
 1. one
    - uno 
-     - spanish
    - un
-     - french
 2. two
    - dos
    - deux
