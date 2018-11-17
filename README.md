@@ -15,10 +15,9 @@ Versioned Markdown format. They are as follows:
 - **Paragraphs:** which can be any series of string tokens, including basic 
   strings of text (words and punctuation) as well as intermixed `code` text,
   *emphasis* text, **bold** text, and [links](https://example.com/),
-  sperated by very forgiving whitespaces, which cannot extend over
-  a blank newline. These lines are treated as a list of string tokens, with 
-  all whitspace rendered as a single space.
-- **Headings:** which may only contain plain text title, 
+  seperated by whitespace, which cannot extend over a blank newline.
+- **Headings:** which may only contain plain text in their title, and have 
+  different levels.
 - **Quote Blocks:** which are treated the same as paragpraphs, but enclosed in 
   a special formatting, to indent them inward in the final document.
 - **Code Blocks:** which simply present their content verbatin.
@@ -55,6 +54,8 @@ or
 ```
 ## <heading level 2 text>
 ```
+
+etc.
 
 ### Block quotes
 
@@ -101,7 +102,7 @@ code block inside a code block
 ```
 ``````
 
-Indented or other types of code blocks may be accepted by the parser, but
+Indented or other types of code blocks *may* be accepted by the formatter, but
 only the backtick fenced code blocks will be emitted.
 
 ### Tables
@@ -112,14 +113,14 @@ Tables have the following stable output format:
 | Table | Heads | should just be | formatted strictly | like | this |
 | ----- | ----- | -------------- | ------------------ | ---- | ---- |
 | the content itself | should | just | be formatted | like this | x |
-| so that a change | to | any | cell | x | x |
+| so that a change | to | any | cell | on | a single line |
 | will | be | stable | on the | rest | of the table | 
 ```
 
 | Table | Heads | should just be | formatted strictly | like | this |
 | ----- | ----- | -------------- | ------------------ | ---- | ---- |
 | the content itself | should | just | be formatted | like this | x |
-| so that a change | to | any | cell | x | x |
+| so that a change | to | any | cell | on | a single line |
 | will | be | stable | on the | rest | of the table | 
 
 > Note: tables are an exception to the line wrapping rule. Their formatting
@@ -146,10 +147,10 @@ as:
 
 [descriptive text](http://www.example.com/)
 
-> Note: links are another example of an exception to the line wrapping rule.
-> Links may require a text token longer than an arbitrary limit, but will 
-> be treated as one token in a paragraph (i.e. they will start on a new
-> line if too long, or blended in with other tokens if they fit.)
+Links are another example of an exception to the line wrapping rule.
+Links may require a text token longer than an arbitrary limit, but will 
+be treated as one token in a paragraph (i.e. they will start on a new
+line if too long, or blended in with other tokens if they fit.)
 
 > Note: footnote link notation is not supported
 
