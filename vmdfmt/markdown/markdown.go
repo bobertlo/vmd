@@ -13,8 +13,8 @@ type Renderer struct {
 	root *blackfriday.Node
 	pretty bool
 	width int
+	prefix string
 	indent int
-	indentIndex int
 }
 
 // flattenSpaces removes all leading, trailing, and reduntant spaces from a
@@ -28,8 +28,8 @@ func flattenSpaces(str []byte) []byte {
 
 // loadFile reads a file into a []byte buffer and parses it into a blackfriday
 // markdown tree
-func loadFile(name string) (*blackfriday.Node, error) {
-	dat, err := ioutil.ReadFile("test.md")
+func loadFile(path string) (*blackfriday.Node, error) {
+	dat, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func loadFile(name string) (*blackfriday.Node, error) {
 }
 
 // FileRenderer parses a markdown tree from a file and creates a new Renderer
-func FileRenderer(path string) (*Renderer, error) {
+func FileRenderer(path string, pretty bool) (*Renderer, error) {
 	n, err := loadFile(path)
 	if err != nil {
 		return nil, err
@@ -53,15 +53,15 @@ func FileRenderer(path string) (*Renderer, error) {
 		pretty: false,
 		width: 80,
 		indent: 0,
-		indentIndex: 0,
+		prefix: "",
 	}
 	return r, nil
 }
 
 // RenderFile renders a markdown file to the out buffer, returning a formatted
 // ([]byte,nil) or (nil,err) if an error occurs
-func RenderFile(path string) ([]byte, error) {
-	r, err := FileRenderer(path)
+func RenderFile(path string, pretty bool) ([]byte, error) {
+	r, err := FileRenderer(path,pretty)
 	if err != nil {
 		return nil, err
 	}
