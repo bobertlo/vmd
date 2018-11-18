@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
-	"./markdown"
+	"github.com/bobertlo/vmd/vmdfmt/markdown"
 )
 
 func main() {
