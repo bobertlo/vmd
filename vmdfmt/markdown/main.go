@@ -1,14 +1,23 @@
 package markdown
 
 import (
+	"errors"
 	"bytes"
 	"io/ioutil"
+	"regexp"
 	"gopkg.in/russross/blackfriday.v2"
 )
 
 type Renderer struct {
 	out *bytes.Buffer
 	root *blackfriday.Node
+	pretty bool
+}
+
+func flattenSpaces(str []byte) []byte {
+	re := regexp.MustCompile("  +")
+	replaced := re.ReplaceAll(bytes.TrimSpace(str), []byte(" "))
+	return replaced
 }
 
 func loadFile(name string) (*blackfriday.Node, error) {
@@ -41,7 +50,10 @@ func RenderFile(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.Render()
+	err = r.Render()
+	if err != nil {
+		return nil, err
+	} 
 	return r.out.Bytes(), nil
 }
 
@@ -51,21 +63,39 @@ func (r *Renderer) writeNBytes (n int, c byte) {
 	}
 }
 
-func (r *Renderer) Render() {
+func (r *Renderer) Render() error {
 	for c := r.root.FirstChild; c != nil; c = c.Next {
 		switch (c.Type) {
 		case blackfriday.Heading:
-			r.heading(c)
+			err := r.heading(c)
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
-func (r *Renderer) heading(n *blackfriday.Node) {
-	r.writeNBytes(n.HeadingData.Level, '#')
-	r.out.WriteByte(' ')
-	if n.FirstChild.Type != blackfriday.Text {
-		panic("invalid")
+func (r *Renderer) headingText(n *blackfriday.Node) error {
+	for p := n; p != nil; p = n.Next {
+		if p.Type != blackfriday.Text {
+			return errors.New("Headings may only contain text elements")
+		}
+		r.out.Write(flattenSpaces(p.Literal))
 	}
+	return nil
+}
+
+func (r *Renderer) heading(n *blackfriday.Node) error {
+	level := n.HeadingData.Level
+	r.writeNBytes(level, '#')
+	r.out.WriteByte(' ')
+	err := r.headingText(n.FirstChild)
+	if err != nil {
+		return err
+	}
+	r.out.WriteString("\n\n")
+	return nil
 }
 
 
