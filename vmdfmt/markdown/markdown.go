@@ -10,7 +10,6 @@ import (
 
 type Renderer struct {
 	out *bytes.Buffer
-	root *blackfriday.Node
 	pretty bool
 	width int
 	prefix string
@@ -26,9 +25,9 @@ func flattenSpaces(str []byte) []byte {
 	return replaced
 }
 
-// loadFile reads a file into a []byte buffer and parses it into a blackfriday
-// markdown tree
-func loadFile(path string) (*blackfriday.Node, error) {
+// LoadMarkdown reads a file into a []byte buffer and parses it into a 
+// blackfriday markdown tree.
+func LoadMarkdown(path string) (*blackfriday.Node, error) {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -41,34 +40,33 @@ func loadFile(path string) (*blackfriday.Node, error) {
 }
 
 // FileRenderer parses a markdown tree from a file and creates a new Renderer
-func FileRenderer(path string, pretty bool) (*Renderer, error) {
-	n, err := loadFile(path)
-	if err != nil {
-		return nil, err
-	}
+func NewRenderer(pretty bool) *Renderer {
 	buf := new(bytes.Buffer)
 	r := &Renderer{
 		out: buf,
-		root: n,
 		pretty: false,
 		width: 80,
 		indent: 0,
 		prefix: "",
 	}
-	return r, nil
+	return r
 }
 
 // RenderFile renders a markdown file to the out buffer, returning a formatted
 // ([]byte,nil) or (nil,err) if an error occurs
 func RenderFile(path string, pretty bool) ([]byte, error) {
-	r, err := FileRenderer(path,pretty)
+	r := NewRenderer(pretty)
+
+	n, err := LoadMarkdown(path)
 	if err != nil {
 		return nil, err
 	}
-	err = r.Render()
+
+	err = r.Render(n)
 	if err != nil {
 		return nil, err
 	} 
+
 	return r.out.Bytes(), nil
 }
 
@@ -79,10 +77,13 @@ func (r *Renderer) writeNBytes (n int, c byte) {
 	}
 }
 
-// Render starts at the document root node and renders every valid child, or
-// returns an error if invalid nodes are found anywhere in the tree.
-func (r *Renderer) Render() error {
-	for c := r.root.FirstChild; c != nil; c = c.Next {
+func (r *Renderer) Render(root *blackfriday.Node) error {
+	// if passed a full document, start on the first child node
+	if root.Type == blackfriday.Document {
+		root = root.FirstChild
+	}
+
+	for c := root; c != nil; c = c.Next {
 		switch (c.Type) {
 		case blackfriday.Heading:
 			err := r.heading(c)
