@@ -1,68 +1,53 @@
 # Versioned Markdown (VMD)
 
 Versioned Markdown is a 
-[markdown](https://en.wikipedia.org/wiki/Markdown) specification tailored
-group collaboration on documents. A key component of this project will be
-a formatting tool, similar to `go fmt`, which can read markdown input with the
-[blackfriday.v2](https://github.com/russross/blackfriday/tree/v2) markdown
-library, and re-render the markdown in a stable, consistent format.
+[markdown](https://en.wikipedia.org/wiki/Markdown) specification tailored to
+group collaboration on documents. A key component of this project is 
+a formatting tool, similar to `go fmt`, which can parse markdown into a
+tree, and re-render it in a standard and stable output format.
 
-## Elements of Versioned Markdown
+> The reference implementation is a go library that utilizes the
+> [blackfriday.v2](https://github.com/russross/blackfriday/tree/v2) markdown
+> library to parse a robust segment of markdown formats into a standard
+> output.
 
-Before we give the the example format we must define the elements of the 
-Versioned Markdown format. They are as follows:
+## Versioned Markdown Specification
 
-- **Paragraphs:** which can be any series of string tokens, including basic 
-  strings of text (words and punctuation) as well as intermixed `code` text,
-  *emphasis* text, **bold** text, and [links](https://example.com/),
-  seperated by whitespace, which cannot extend over a blank newline.
-- **Headings:** which may only contain plain text in their title, and have 
-  different levels.
-- **Quote Blocks:** which are treated the same as paragpraphs, but enclosed in 
-  a special formatting, to indent them inward in the final document.
-- **Code Blocks:** which simply present their content verbatin.
-- **Lists:** which are an ordered container for paragraphs, and may also
-  contain sub-lists.
-- **Tables:** which present paragraphs in a fomatted grid by the renderer.
-
-Each of these elements *must* have one blank line between it and another
-element in the output format (excluding links and inline formatting inside
-a paragraph) and aside from paragraphs, none of these elements may be nested
-inside of one another.
-
-## Markdown style guide
-
-This is a basic specification of the Versioned Markdown ouput format.
+This is a basic specification of the Versioned Markdown ouput format. On
+the root level of the document, each of these elements must have exactly
+one empty line between it and the next element.
 
 ### Paragraphs
 
-Paragraphs are formatted as a collection of words and inline formatting blocks,
-rendered with a single space between each token, and wrapped at an arbitrary
-column limit (the default is 80 columns).
+Paragraphs are formatted as a collection of words (and punctuation) with 
+inline formatting, emitted as tokens, which are line wrapped at a predefined
+column number (default: 80). There is a single space between each token.
 
-### Headings are simple
+> Links are treated as a single token, because of their formatting.
+
+### Headings
 
 Headings will only be rendered in `ATX Heading` format, So they will be
 rendered as:
 
 ```
 # <heading level 1 text>
-```
 
-or
-
-```
 ## <heading level 2 text>
-```
 
 etc.
+```
+
+> Heading bodies may only contain plain text. They may not contain
+links, emphasis, or any other formatting.
 
 ### Block quotes
 
 Block quotes are treated almost identically to paragraphs, except that each
 line will begin with a '>' and a single space before the text begins.
 
-> Note: lists are not supported in block quotes.
+> Block quotes may only contain content which is valid in paragraphs, in 
+> addition to nested block quotes.
 
 ### Code Blocks
 
@@ -82,11 +67,10 @@ Code block example:
 The text inside is passed on verbatim.
 ```
 
-To include backtick fences inside a codeblock, the opening fence must have
-more backticks than any backtick sequence contained inside. The reference
-implementation will use the same length of fence as is parsed, for
-simplicity.
-
+To quote codeblock notation inside of a codeblock, you may increase the 
+number of backticks. Any backticks of a lesser magnitude inside of the
+code block will be ignored. The reference implementation simply reuses
+the fence length from the original document.
 
 `````````
 ``````
@@ -102,8 +86,9 @@ code block inside a code block
 ```
 ``````
 
-Indented or other types of code blocks *may* be accepted by the formatter, but
-only the backtick fenced code blocks will be emitted.
+> A formatting implementation may accept multiple formats of block quotes,
+> but any tilde fences or indented fences containing backtick fences may
+> have undefined behaviour.
 
 ### Tables
 
@@ -147,12 +132,10 @@ as:
 
 [descriptive text](http://www.example.com/)
 
-Links are another example of an exception to the line wrapping rule.
-Links may require a text token longer than an arbitrary limit, but will 
-be treated as one token in a paragraph (i.e. they will start on a new
-line if too long, or blended in with other tokens if they fit.)
+> Note: links are another exemption to the line wrapping rule. Their
+> formatting requires them to exist on a single line.
 
-> Note: footnote link notation is not supported
+> Note: footnote link notation is not supported.
 
 ### Lists
 
@@ -188,13 +171,9 @@ three columns of indentation if a line wraps, or a sublist is to be started.
    1. uno
    1. dos
 
-> If pretty list formatting is enabled, ordered lists will be numbered by 
-> their index, while the default settings will be more stable on edits, and 
-> let the renderer handle indexing of items.
-
 The one last feature of lists is that they can be added to eachother, but
 an ordered list may only contain ordered items, while sub-lists may be 
-of another, homogenous type.
+of another, also homogenous, class.
 
 ```
 1. one
@@ -218,5 +197,5 @@ of another, homogenous type.
    - tres
    - trois
 
-Note that each level of the list applies its indentation on top of the 
-previous item's indentation.
+Note that each level of the list applies its precise indentation in addition
+to the indentation from the parent list.
