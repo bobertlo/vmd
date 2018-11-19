@@ -27,8 +27,8 @@ func trimFlattenSpaces(str []byte) []byte {
 	return bytes.TrimSpace(flattenSpaces(str))
 }
 
-// LoadMarkdown reads a file into a []byte buffer and parses it into a 
-// blackfriday markdown tree, returning the root (*Node,nil) or (nil,err)
+// LoadMarkdown reads a file and parses it into a blackfriday markdown tree,
+// returning the document root (*Node, nil) or (nil, err)
 func LoadMarkdown(path string) (*blackfriday.Node, error) {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -37,6 +37,8 @@ func LoadMarkdown(path string) (*blackfriday.Node, error) {
 	return ParseMarkdown(dat)
 }
 
+// ParseMarkdown parses a markdown document from a []byte and returns
+// a blackfriday markdown root (*Node, nil) or (nil, err)
 func ParseMarkdown(dat []byte) (*blackfriday.Node, error) {
 	m := blackfriday.New(blackfriday.WithExtensions(
 		blackfriday.Tables|blackfriday.FencedCode))
@@ -45,8 +47,10 @@ func ParseMarkdown(dat []byte) (*blackfriday.Node, error) {
 	return n, nil
 }
 
-// FileRenderer parses a markdown tree from a file and creates a new Renderer
-func NewRenderer(pretty bool, cols int) *Renderer {
+// NewRenderer creates a new markdown renderer. cols specifies how many 
+// columns to wrap lines at, and pretty specifies whether to format tables
+// with whitespace.
+func NewRenderer(cols int, pretty bool) *Renderer {
 	buf := new(bytes.Buffer)
 	r := &Renderer{
 		out: buf,
@@ -69,6 +73,9 @@ func (r *Renderer) RenderFile(path string) ([]byte, error) {
 	return r.Render(n)
 }
 
+// RenderBytes parses a markdown document in a []byte and renders it, 
+// returning a formatted document in a []byte. Returns ([]byte,nil) or
+// (nil,err)
 func (r *Renderer) RenderBytes(dat []byte) ([]byte, error) {
 	n, err := ParseMarkdown(dat)
 	if err != nil {
@@ -85,6 +92,8 @@ func (r *Renderer) writeNBytes (n int, c byte) {
 	}
 }
 
+// Render a blackfriday markdown tree and return the output as a []byte.
+// Returns ([]byte,nil) or (nil,err) if invalid input is encountered.
 func (r *Renderer) Render(root *blackfriday.Node) ([]byte,error) {
 	// if passed a full document, start on the first child node
 	if root.Type == blackfriday.Document {

@@ -9,6 +9,7 @@ import (
 
 func main() {
 	pretty := flag.Bool("pretty", false, "enable pretty formatting")
+	cols := flag.Int("cols", 80, "number of columns to wrap output")
 	flag.Parse()
 
 	if flag.NArg() != 1 {
@@ -17,7 +18,7 @@ func main() {
 	}
 	path := flag.Arg(0)
 	
-	r := markdown.NewRenderer(*pretty, 80)
+	r := markdown.NewRenderer(*cols, *pretty)
 	buf, err := r.RenderFile(path)
 
 	if err != nil {
