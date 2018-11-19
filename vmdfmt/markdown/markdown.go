@@ -11,27 +11,33 @@ import (
 type Renderer struct {
 	out *bytes.Buffer
 	pretty bool
-	width int
+	cols int
 	prefix string
 	indent int
 }
 
-// flattenSpaces removes all leading, trailing, and reduntant spaces from a
-// []byte array, leaving internal single spaces.
+// flattenSpaces removes all reduntant spaces from a []byte array, leaving
+// single spaces
 func flattenSpaces(str []byte) []byte {
 	re := regexp.MustCompile("  +")
-	replaced := re.ReplaceAll(bytes.TrimSpace(str), []byte(" "))
-	replaced = bytes.TrimSpace(replaced)
-	return replaced
+	return re.ReplaceAll(str, []byte(" "))
+}
+
+func trimFlattenSpaces(str []byte) []byte {
+	return bytes.TrimSpace(flattenSpaces(str))
 }
 
 // LoadMarkdown reads a file into a []byte buffer and parses it into a 
-// blackfriday markdown tree.
+// blackfriday markdown tree, returning the root (*Node,nil) or (nil,err)
 func LoadMarkdown(path string) (*blackfriday.Node, error) {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
+	return ParseMarkdown(dat)
+}
+
+func ParseMarkdown(dat []byte) (*blackfriday.Node, error) {
 	m := blackfriday.New(blackfriday.WithExtensions(
 		blackfriday.Tables|blackfriday.FencedCode))
 	n := m.Parse(dat)
@@ -40,12 +46,12 @@ func LoadMarkdown(path string) (*blackfriday.Node, error) {
 }
 
 // FileRenderer parses a markdown tree from a file and creates a new Renderer
-func NewRenderer(pretty bool) *Renderer {
+func NewRenderer(pretty bool, cols int) *Renderer {
 	buf := new(bytes.Buffer)
 	r := &Renderer{
 		out: buf,
 		pretty: false,
-		width: 80,
+		cols: 80,
 		indent: 0,
 		prefix: "",
 	}
@@ -54,20 +60,22 @@ func NewRenderer(pretty bool) *Renderer {
 
 // RenderFile renders a markdown file to the out buffer, returning a formatted
 // ([]byte,nil) or (nil,err) if an error occurs
-func RenderFile(path string, pretty bool) ([]byte, error) {
-	r := NewRenderer(pretty)
-
+func (r *Renderer) RenderFile(path string) ([]byte, error) {
 	n, err := LoadMarkdown(path)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.Render(n)
+	return r.Render(n)
+}
+
+func (r *Renderer) RenderBytes(dat []byte) ([]byte, error) {
+	n, err := ParseMarkdown(dat)
 	if err != nil {
 		return nil, err
-	} 
+	}
 
-	return r.out.Bytes(), nil
+	return r.Render(n)
 }
 
 // writes 'c' n times
@@ -77,7 +85,7 @@ func (r *Renderer) writeNBytes (n int, c byte) {
 	}
 }
 
-func (r *Renderer) Render(root *blackfriday.Node) error {
+func (r *Renderer) Render(root *blackfriday.Node) ([]byte,error) {
 	// if passed a full document, start on the first child node
 	if root.Type == blackfriday.Document {
 		root = root.FirstChild
@@ -88,16 +96,17 @@ func (r *Renderer) Render(root *blackfriday.Node) error {
 		case blackfriday.Heading:
 			err := r.heading(c)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		case blackfriday.Paragraph:
 			err := r.paragraph(c)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
-	return nil
+
+	return r.out.Bytes(), nil
 }
 
 // headingText checks that n and siblings are text nodes (there shouldn't
@@ -108,7 +117,7 @@ func (r *Renderer) headingText(n *blackfriday.Node) error {
 		if p.Type != blackfriday.Text {
 			return errors.New("Headings may only contain text elements")
 		}
-		r.out.Write(flattenSpaces(p.Literal))
+		r.out.Write(trimFlattenSpaces(p.Literal))
 	}
 	return nil
 }

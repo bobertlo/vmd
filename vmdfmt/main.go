@@ -17,7 +17,8 @@ func main() {
 	}
 	path := flag.Arg(0)
 	
-	buf, err := markdown.RenderFile(path, *pretty)
+	r := markdown.NewRenderer(*pretty, 80)
+	buf, err := r.RenderFile(path)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
@@ -25,3 +26,4 @@ func main() {
 	}
 	os.Stdout.Write(buf)
 }
+
