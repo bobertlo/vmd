@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/bobertlo/vmd/vmdfmt/linewrap"
-	"gopkg.in/russross/blackfriday.v2"
+	"gopkg.in/bobertlo/blackfriday.v2"
 )
 
 type Renderer struct {
