@@ -1,8 +1,9 @@
 package markdown
 
 import (
-	"errors"
 	"bytes"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"regexp"
 	"strings"
@@ -12,9 +13,9 @@ import (
 )
 
 type Renderer struct {
-	out *bytes.Buffer
+	out    *bytes.Buffer
 	pretty bool
-	cols int
+	cols   int
 }
 
 // flattenSpaces removes all reduntant spaces from a []byte array, leaving
@@ -43,21 +44,21 @@ func LoadMarkdown(path string) (*blackfriday.Node, error) {
 func ParseMarkdown(dat []byte) (*blackfriday.Node, error) {
 	m := blackfriday.New(blackfriday.WithExtensions(
 		blackfriday.Tables | blackfriday.FencedCode |
-		blackfriday.NoIntraEmphasis))
+			blackfriday.NoIntraEmphasis))
 	n := m.Parse(dat)
 
 	return n, nil
 }
 
-// NewRenderer creates a new markdown renderer. cols specifies how many 
+// NewRenderer creates a new markdown renderer. cols specifies how many
 // columns to wrap lines at, and pretty specifies whether to format tables
 // with whitespace.
 func NewRenderer(cols int, pretty bool) *Renderer {
 	buf := new(bytes.Buffer)
 	r := &Renderer{
-		out: buf,
+		out:    buf,
 		pretty: pretty,
-		cols: 80,
+		cols:   80,
 	}
 	return r
 }
@@ -73,7 +74,7 @@ func (r *Renderer) RenderFile(path string) ([]byte, error) {
 	return r.Render(n)
 }
 
-// RenderBytes parses a markdown document in a []byte and renders it, 
+// RenderBytes parses a markdown document in a []byte and renders it,
 // returning a formatted document in a []byte. Returns ([]byte,nil) or
 // (nil,err)
 func (r *Renderer) RenderBytes(dat []byte) ([]byte, error) {
@@ -86,7 +87,7 @@ func (r *Renderer) RenderBytes(dat []byte) ([]byte, error) {
 }
 
 // writes 'c' n times
-func (r *Renderer) writeNBytes (n int, c byte) {
+func (r *Renderer) writeNBytes(n int, c byte) {
 	for i := 0; i < n; i++ {
 		r.out.WriteByte(c)
 	}
@@ -94,14 +95,14 @@ func (r *Renderer) writeNBytes (n int, c byte) {
 
 // Render a blackfriday markdown tree and return the output as a []byte.
 // Returns ([]byte,nil) or (nil,err) if invalid input is encountered.
-func (r *Renderer) Render(root *blackfriday.Node) ([]byte,error) {
+func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 	// if passed a full document, start on the first child node
 	if root.Type == blackfriday.Document {
 		root = root.FirstChild
 	}
 
 	for c := root; c != nil; c = c.Next {
-		switch (c.Type) {
+		switch c.Type {
 		case blackfriday.Heading:
 			err := r.heading(c)
 			if err != nil {
@@ -109,14 +110,22 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte,error) {
 			}
 		case blackfriday.Paragraph:
 			w := linewrap.New(r.out, r.cols)
-			err := r.paragraph(w,c)
+			err := r.paragraph(w, c)
 			if err != nil {
 				return nil, err
 			}
+			w.Newline()
 		case blackfriday.CodeBlock:
 			r.codeBlock(c)
 		case blackfriday.BlockQuote:
 			r.blockQuote(c)
+		case blackfriday.List:
+			w := linewrap.New(r.out, r.cols)
+			err := r.list(w, c)
+			if err != nil {
+				return nil, err
+			}
+			w.Newline()
 		}
 	}
 
@@ -155,7 +164,7 @@ func (r *Renderer) heading(n *blackfriday.Node) error {
 
 func link(n *blackfriday.Node) (string, error) {
 	dst := string(n.LinkData.Destination)
-	if (n.FirstChild == nil || n.FirstChild.Type != blackfriday.Text) {
+	if n.FirstChild == nil || n.FirstChild.Type != blackfriday.Text {
 		return "", errors.New("Invalid Link Node")
 	}
 	text := string(trimFlattenSpaces(n.FirstChild.Literal))
@@ -168,9 +177,8 @@ func link(n *blackfriday.Node) (string, error) {
 }
 
 func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
-
 	for c := n.FirstChild; c != nil; c = c.Next {
-		switch(c.Type) {
+		switch c.Type {
 		case blackfriday.Link:
 			str, err := link(c)
 			if err != nil {
@@ -186,7 +194,6 @@ func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 		}
 	}
 	w.TerminateLine()
-	w.Newline()
 
 	return nil
 }
@@ -194,6 +201,7 @@ func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 func (r *Renderer) blockQuote(n *blackfriday.Node) {
 	w := linewrap.NewPrefix(r.out, r.cols, "> ", "> ")
 	r.paragraph(w, n.FirstChild)
+	r.out.WriteByte('\n')
 }
 
 func (r *Renderer) codeBlock(n *blackfriday.Node) {
@@ -201,10 +209,43 @@ func (r *Renderer) codeBlock(n *blackfriday.Node) {
 	if n.CodeBlockData.IsFenced && n.CodeBlockData.FenceLength > 0 {
 		fenceLength = n.CodeBlockData.FenceLength
 	}
-	r.writeNBytes(fenceLength,'`')
+	r.writeNBytes(fenceLength, '`')
 	r.out.WriteByte('\n')
 	r.out.Write(n.Literal)
-	r.writeNBytes(fenceLength,'`')
+	r.writeNBytes(fenceLength, '`')
 	r.out.WriteByte('\n')
 	r.out.WriteByte('\n')
+}
+
+func (r *Renderer) list(w *linewrap.Wrapper, n *blackfriday.Node) error {
+	ordered := n.ListData.ListFlags&blackfriday.ListTypeOrdered > 0
+	index := 1
+
+	for c := n.FirstChild; c != nil; c = c.Next {
+		if c.Type != blackfriday.Item {
+			return errors.New("all list children must be 'Item' type")
+		}
+		if c.FirstChild.Type == blackfriday.Paragraph {
+			if ordered {
+				prefix := fmt.Sprintf("%d. ", index)
+				subw := w.NewEmbedded(prefix, "   ")
+				r.paragraph(subw, c.FirstChild)
+			} else {
+				subw := w.NewEmbedded("- ", "  ")
+				r.paragraph(subw, c.FirstChild)
+			}
+		}
+		if c.FirstChild.Next != nil && c.FirstChild.Next.Type == blackfriday.List {
+			if ordered {
+				r.list(w.NewEmbedded("   ", "   "), c.FirstChild.Next)
+			} else {
+				r.list(w.NewEmbedded("   ", "   "), c.FirstChild.Next)
+			}
+			//} else {
+			//	return errors.New("All list item children must be of type 'Item' or 'Paragraph'")
+		}
+		index++
+	}
+
+	return nil
 }

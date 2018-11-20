@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
 	"flag"
 	"fmt"
 	"github.com/bobertlo/vmd/vmdfmt/markdown"
+	"os"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 		os.Exit(1)
 	}
 	path := flag.Arg(0)
-	
+
 	r := markdown.NewRenderer(*cols, *pretty)
 	buf, err := r.RenderFile(path)
 
@@ -27,4 +27,3 @@ func main() {
 	}
 	os.Stdout.Write(buf)
 }
-

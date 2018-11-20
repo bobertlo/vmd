@@ -5,13 +5,13 @@ import (
 )
 
 type Wrapper struct {
-	out io.Writer
-	cols int                // column limit for wrapping words
-	count int
-	initialPrefix string    // prefix for first line
-	prefix string           // prefix for subsequent lines
-	firstLine bool
-	newLine bool 
+	out           io.Writer
+	cols          int // column limit for wrapping words
+	count         int
+	initialPrefix string // prefix for first line
+	prefix        string // prefix for subsequent lines
+	firstLine     bool
+	newLine       bool
 }
 
 func New(w io.Writer, cols int) *Wrapper {
@@ -19,19 +19,19 @@ func New(w io.Writer, cols int) *Wrapper {
 }
 
 func NewPrefix(writer io.Writer, cols int, initialPrefix, prefix string) *Wrapper {
-	return &Wrapper {
-		out: writer,
-		cols: cols,
+	return &Wrapper{
+		out:           writer,
+		cols:          cols,
 		initialPrefix: initialPrefix,
-		prefix: prefix,
-		firstLine: true,
-		newLine: true,
+		prefix:        prefix,
+		firstLine:     true,
+		newLine:       true,
 	}
 	return nil
 }
 
 func (w *Wrapper) NewEmbedded(initialPrefix, prefix string) *Wrapper {
-	return NewPrefix(w.out, w.cols, w.initialPrefix + initialPrefix, prefix)
+	return NewPrefix(w.out, w.cols, w.prefix+initialPrefix, w.prefix+prefix)
 }
 
 func (w *Wrapper) WriteToken(token string) {
@@ -61,7 +61,7 @@ func (w *Wrapper) WriteToken(token string) {
 	} else {
 		// if the token is too long for this token, create a newline
 		// and recurse (to handle prefixes)
-		if w.count + len(token) + 1 > w.cols {
+		if w.count+len(token)+1 > w.cols {
 			w.out.Write([]byte("\n"))
 			w.count = 0
 			w.newLine = true
@@ -80,7 +80,7 @@ func (w *Wrapper) WriteToken(token string) {
 }
 
 func (w *Wrapper) WriteTokens(tokens []string) {
-	for i := range(tokens) {
+	for i := range tokens {
 		if tokens[i] != "" {
 			w.WriteToken(tokens[i])
 		}
@@ -98,4 +98,3 @@ func (w *Wrapper) Newline() {
 	w.count = 0
 	w.newLine = true
 }
-
