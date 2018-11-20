@@ -5,6 +5,9 @@ import (
 	"bytes"
 	"io/ioutil"
 	"regexp"
+	"strings"
+
+	"github.com/bobertlo/vmd/vmdfmt/linewrap"
 	"gopkg.in/russross/blackfriday.v2"
 )
 
@@ -12,8 +15,6 @@ type Renderer struct {
 	out *bytes.Buffer
 	pretty bool
 	cols int
-	prefix string
-	indent int
 }
 
 // flattenSpaces removes all reduntant spaces from a []byte array, leaving
@@ -54,10 +55,8 @@ func NewRenderer(cols int, pretty bool) *Renderer {
 	buf := new(bytes.Buffer)
 	r := &Renderer{
 		out: buf,
-		pretty: false,
+		pretty: pretty,
 		cols: 80,
-		indent: 0,
-		prefix: "",
 	}
 	return r
 }
@@ -108,7 +107,8 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte,error) {
 				return nil, err
 			}
 		case blackfriday.Paragraph:
-			err := r.paragraph(c)
+			w := linewrap.New(r.out, r.cols)
+			err := r.paragraph(w,c)
 			if err != nil {
 				return nil, err
 			}
@@ -148,7 +148,41 @@ func (r *Renderer) heading(n *blackfriday.Node) error {
 	return nil
 }
 
-func (r *Renderer) paragraph(n *blackfriday.Node) error {
+func link(n *blackfriday.Node) (string, error) {
+	dst := string(n.LinkData.Destination)
+	if (n.FirstChild == nil || n.FirstChild.Type != blackfriday.Text) {
+		return "", errors.New("Invalid Link Node")
+	}
+	text := string(trimFlattenSpaces(n.FirstChild.Literal))
+
+	if strings.Compare(dst, text) == 0 {
+		return ("<" + dst + ">"), nil
+	} else {
+		return ("[" + text + "](" + dst + ")"), nil
+	}
+}
+
+func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
+
+	for c := n.FirstChild; c != nil; c = c.Next {
+		switch(c.Type) {
+		case blackfriday.Link:
+			str, err := link(c)
+			if err != nil {
+				return err
+			}
+			w.WriteToken(str)
+		case blackfriday.Text:
+			s := strings.Replace(string(c.Literal), "\n", " ", -1)
+			tokens := strings.Split(s, " ")
+			w.WriteTokens(tokens)
+		case blackfriday.Code:
+			w.WriteToken("`" + string(c.Literal) + "`")
+		}
+	}
+	w.TerminateLine()
+	w.Newline()
+
 	return nil
 }
 

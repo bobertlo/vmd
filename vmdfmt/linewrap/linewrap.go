@@ -61,7 +61,7 @@ func (w *Wrapper) WriteToken(token string) {
 	} else {
 		// if the token is too long for this token, create a newline
 		// and recurse (to handle prefixes)
-		if w.count + len(token) > w.cols {
+		if w.count + len(token) + 1 > w.cols {
 			w.out.Write([]byte("\n"))
 			w.count = 0
 			w.newLine = true
@@ -81,7 +81,9 @@ func (w *Wrapper) WriteToken(token string) {
 
 func (w *Wrapper) WriteTokens(tokens []string) {
 	for i := range(tokens) {
-		w.WriteToken(tokens[i])
+		if tokens[i] != "" {
+			w.WriteToken(tokens[i])
+		}
 	}
 }
 
