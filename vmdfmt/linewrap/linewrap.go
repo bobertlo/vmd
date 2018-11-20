@@ -94,6 +94,11 @@ func (w *Wrapper) TerminateLine() {
 }
 
 func (w *Wrapper) Newline() {
+	if w.firstLine {
+		w.out.Write([]byte(w.initialPrefix))
+	} else if w.newLine {
+		w.out.Write([]byte(w.prefix))
+	}
 	w.out.Write([]byte("\n"))
 	w.count = 0
 	w.newLine = true

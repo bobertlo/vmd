@@ -118,7 +118,11 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 		case blackfriday.CodeBlock:
 			r.codeBlock(c)
 		case blackfriday.BlockQuote:
-			r.blockQuote(c)
+			w := linewrap.New(r.out, r.cols)
+			err := r.blockQuote(w, c)
+			if err != nil {
+				return nil, err
+			}
 		case blackfriday.List:
 			w := linewrap.New(r.out, r.cols)
 			err := r.list(w, c)
@@ -198,10 +202,22 @@ func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	return nil
 }
 
-func (r *Renderer) blockQuote(n *blackfriday.Node) {
-	w := linewrap.NewPrefix(r.out, r.cols, "> ", "> ")
-	r.paragraph(w, n.FirstChild)
-	r.out.WriteByte('\n')
+func (r *Renderer) blockQuote(w *linewrap.Wrapper, n *blackfriday.Node) error {
+	// FIXME handle more paragraphs and nested block quotes
+	subw := w.NewEmbedded("> ", "> ")
+	for c := n.FirstChild; c != nil; c = c.Next {
+		if c.Type == blackfriday.Paragraph {
+			r.paragraph(subw, c)
+			subw.TerminateLine()
+		} else if c.Type == blackfriday.BlockQuote {
+			subw.Newline()
+			r.blockQuote(subw, c)
+			subw.TerminateLine()
+		} else {
+			return errors.New("BlockQuotes may only contain paragraphs or BlockQuotes")
+		}
+	}
+	return nil
 }
 
 func (r *Renderer) codeBlock(n *blackfriday.Node) {
@@ -231,18 +247,12 @@ func (r *Renderer) list(w *linewrap.Wrapper, n *blackfriday.Node) error {
 				subw := w.NewEmbedded(prefix, "   ")
 				r.paragraph(subw, c.FirstChild)
 			} else {
-				subw := w.NewEmbedded("- ", "  ")
+				subw := w.NewEmbedded("- ", "   ")
 				r.paragraph(subw, c.FirstChild)
 			}
 		}
 		if c.FirstChild.Next != nil && c.FirstChild.Next.Type == blackfriday.List {
-			if ordered {
-				r.list(w.NewEmbedded("   ", "   "), c.FirstChild.Next)
-			} else {
-				r.list(w.NewEmbedded("   ", "   "), c.FirstChild.Next)
-			}
-			//} else {
-			//	return errors.New("All list item children must be of type 'Item' or 'Paragraph'")
+			r.list(w.NewEmbedded("   ", "   "), c.FirstChild.Next)
 		}
 		index++
 	}
