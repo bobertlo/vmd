@@ -42,7 +42,8 @@ func LoadMarkdown(path string) (*blackfriday.Node, error) {
 // a blackfriday markdown root (*Node, nil) or (nil, err)
 func ParseMarkdown(dat []byte) (*blackfriday.Node, error) {
 	m := blackfriday.New(blackfriday.WithExtensions(
-		blackfriday.Tables|blackfriday.FencedCode))
+		blackfriday.Tables | blackfriday.FencedCode |
+		blackfriday.NoIntraEmphasis))
 	n := m.Parse(dat)
 
 	return n, nil
@@ -112,6 +113,10 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte,error) {
 			if err != nil {
 				return nil, err
 			}
+		case blackfriday.CodeBlock:
+			r.codeBlock(c)
+		case blackfriday.BlockQuote:
+			r.blockQuote(c)
 		}
 	}
 
@@ -186,4 +191,20 @@ func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	return nil
 }
 
+func (r *Renderer) blockQuote(n *blackfriday.Node) {
+	w := linewrap.NewPrefix(r.out, r.cols, "> ", "> ")
+	r.paragraph(w, n.FirstChild)
+}
 
+func (r *Renderer) codeBlock(n *blackfriday.Node) {
+	fenceLength := 3
+	if n.CodeBlockData.IsFenced && n.CodeBlockData.FenceLength > 0 {
+		fenceLength = n.CodeBlockData.FenceLength
+	}
+	r.writeNBytes(fenceLength,'`')
+	r.out.WriteByte('\n')
+	r.out.Write(n.Literal)
+	r.writeNBytes(fenceLength,'`')
+	r.out.WriteByte('\n')
+	r.out.WriteByte('\n')
+}
