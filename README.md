@@ -9,13 +9,14 @@ tree, and re-render it in a standard and stable output format.
 > The reference implementation is a go library that utilizes the
 > [blackfriday.v2](https://github.com/russross/blackfriday/tree/v2) markdown
 > library to parse a robust segment of markdown formats into a standard
-> output.
+> output. See `vmdfmt`.
 
 ## Versioned Markdown Specification
 
 This is a basic specification of the Versioned Markdown ouput format. On
 the root level of the document, each of these elements must have exactly
-one empty line between it and the next element.
+one empty line between it and the next element. An output file will end
+with an empty line.
 
 ### Paragraphs
 
@@ -38,16 +39,21 @@ rendered as:
 etc.
 ```
 
-> Heading bodies may only contain plain text. They may not contain
-links, emphasis, or any other formatting.
+> Note: Heading bodies may only contain plain text.
 
-### Block quotes
+### Block Quotes
 
 Block quotes are treated almost identically to paragraphs, except that each
-line will begin with a '>' and a single space before the text begins.
+line will begin with a '>' and a single space before the text begins. If a
+block quote is embedded in another block quote, an additional '>' and
+another single space will be added in addition to the first.
 
-> Block quotes may only contain content which is valid in paragraphs, in 
-> addition to nested block quotes.
+Block quotes may only contain content which is valid in paragraphs, in 
+addition to nested block quotes.
+
+> Note: Block Quotes next to eachother with empty lines are parsed as a single
+> block quote. This is not a style issue, but inherited from the *blackfriday*
+> parser.
 
 ### Code Blocks
 
@@ -92,24 +98,24 @@ code block inside a code block
 
 ### Tables
 
-Tables have the following stable output format:
+Tables have the following format:
 
 ```
-| Table | Heads | should just be | formatted strictly | like | this |
-| ----- | ----- | -------------- | ------------------ | ---- | ---- |
-| the content itself | should | just | be formatted | like this | x |
-| so that a change | to | any | cell | on | a single line |
-| will | be | stable | on the | rest | of the table | 
+| Table       | Heads  | should be      | formatted    | like | this   |
+|-------------|--------|----------------|--------------|------|--------|
+| the content | itself | should         | be formatted | like | this   |
+| with        | single | spaces between | words and    | just | one    |
+| extra space | around | each of the    | longest cell | per  | column |
 ```
 
-| Table | Heads | should just be | formatted strictly | like | this |
-| ----- | ----- | -------------- | ------------------ | ---- | ---- |
-| the content itself | should | just | be formatted | like this | x |
-| so that a change | to | any | cell | on | a single line |
-| will | be | stable | on the | rest | of the table | 
+| Table       | Heads  | should be      | formatted    | like | this   |
+|-------------|--------|----------------|--------------|------|--------|
+| the content | itself | should         | be formatted | like | this   |
+| with        | single | spaces between | words and    | just | one    |
+| extra space | around | each of the    | longest cell | per  | column |
 
 > Note: tables are an exception to the line wrapping rule. Their formatting
-> may require them to be longer than an arbitrary limit.
+> is line based so they cannot be wrapped
 
 ### Links
 
@@ -132,48 +138,47 @@ as:
 
 [descriptive text](http://www.example.com/)
 
-> Note: links are another exemption to the line wrapping rule. Their
-> formatting requires them to exist on a single line.
+No other format of links is supported.
 
-> Note: footnote link notation is not supported.
+> Note: links are another exemption to the line wrapping rule.
 
 ### Lists
 
-Unordered list items start with a `-` and a space, and continue with two
-columns of indentation if a line wraps or a sublist is to be started.
+Unordered list items start with a `-` and a space, and continue with three
+columns of indentation if a line wraps or a sublist is started.
 
 ```
 - potato
 - potato
-  - tomato
-  - tomato
+   - tomato
+   - tomato
 ```
 
 - potato
 - potato
-  - tomato
-  - tomato
+   - tomato
+   - tomato
 
-Ordered lists will start with `1.` followed by a space, and continue with 
-three columns of indentation if a line wraps, or a sublist is to be started.
+Ordered lists will start with their index (i.e`1.`) followed by a space, and
+continue with three columns of indentation if a line wraps, or a sublist is
+started.
 
 ```
 1. one
-1. two
-1. three
+2. two
+3. three
    1. uno
-   1. dos
+   2. dos
 ```
 
 1. one
-1. two
-1. three
+2. two
+3. three
    1. uno
-   1. dos
+   2. dos
 
-The one last feature of lists is that they can be added to eachother, but
-an ordered list may only contain ordered items, while sub-lists may be 
-of another, also homogenous, class.
+Sublists may be of a different type than the parent list, but list types
+may not be mixed.
 
 ```
 1. one
@@ -197,5 +202,5 @@ of another, also homogenous, class.
    - tres
    - trois
 
-Note that each level of the list applies its precise indentation in addition
-to the indentation from the parent list.
+> Note: list inputs must have at least 3 columns of indentation. this is not
+> a style issue, but rather a limitation of the *blackfriday* markdown parser.
