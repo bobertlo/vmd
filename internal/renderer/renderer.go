@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"regexp"
 	"strings"
 
@@ -130,6 +129,11 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 				return nil, err
 			}
 			w.Newline()
+		case blackfriday.Table:
+			err := r.table(c)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -245,7 +249,6 @@ func compileInline(n *blackfriday.Node) (string, error) {
 
 func (r *Renderer) wrapInline(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	line, err := compileInline(n)
-	fmt.Fprintf(os.Stderr, line)
 	if err != nil {
 		return err
 	}
@@ -255,6 +258,9 @@ func (r *Renderer) wrapInline(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	return nil
 }
 
+// paragaph takes a Wrapper (because it is used to process code blocks and list
+// bodies recursively) and a Paragraph Node, and renders all text and inline
+// formatting nodes contained in the paragraph.
 func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	return r.wrapInline(w, n.FirstChild)
 }
@@ -317,6 +323,121 @@ func (r *Renderer) list(w *linewrap.Wrapper, n *blackfriday.Node) error {
 			r.list(w.NewEmbedded("   ", "   "), c.FirstChild.Next)
 		}
 		index++
+	}
+
+	return nil
+}
+
+func tableWidth(n *blackfriday.Node) (int, error) {
+	head := n.FirstChild
+	if head == nil || head.Type != blackfriday.TableHead {
+		return 0, errors.New("invalid table structure")
+	}
+
+	row := head.FirstChild
+	if row == nil || row.Type != blackfriday.TableRow {
+		return 0, errors.New("invalid table structure")
+	}
+
+	cols := 0
+	for c := row.FirstChild; c != nil; c = c.Next {
+		if c.Type != blackfriday.TableCell {
+			return 0, errors.New("invalid table structure")
+		}
+		cols++
+	}
+
+	return cols, nil
+}
+
+func (r *Renderer) table(n *blackfriday.Node) error {
+	width, err := tableWidth(n)
+	if err != nil {
+		return err
+	}
+
+	max := make([]int, width)
+	headData := make([]string, width)
+
+	// process head
+	hrow := n.FirstChild.FirstChild
+	i := 0
+	for c := hrow.FirstChild; c != nil; c = c.Next {
+		if c.FirstChild != nil {
+			str, err := compileInline(c.FirstChild)
+			if err != nil {
+				return err
+			}
+			headData[i] = str
+			if len(str) > max[i] {
+				max[i] = len(str)
+			}
+		}
+		i++
+	}
+	if i < width {
+		return errors.New("table row too short")
+	}
+
+	values := [][]string{}
+
+	body := n.FirstChild.Next
+	if body == nil {
+		return errors.New("invalid table structure")
+	}
+
+	// process rows
+	rows := 0
+	for row := body.FirstChild; row != nil; row = row.Next {
+		rowData := make([]string, width)
+		i = 0
+		for c := row.FirstChild; c != nil; c = c.Next {
+			if i > width {
+				return errors.New("table row too long")
+			}
+
+			if c.FirstChild != nil {
+				str, err := compileInline(c.FirstChild)
+				if err != nil {
+					return err
+				}
+				rowData[i] = str
+				if len(str) > max[i] {
+					max[i] = len(str)
+				}
+			}
+			i++
+		}
+		if i < width {
+			return errors.New("table row too short")
+		}
+		values = append(values, rowData)
+		rows++
+	}
+
+	if rows == 0 {
+		return errors.New("invalid table structure")
+	}
+
+	// output table head
+	for i := 0; i < width; i++ {
+		fmt.Fprintf(r.out, "| %s", headData[i])
+		r.writeNBytes(max[i]-len(headData[i])+1, ' ')
+	}
+	fmt.Fprintln(r.out, "|")
+
+	for i := 0; i < width; i++ {
+		r.out.WriteByte('|')
+		r.writeNBytes(max[i]+2, '-')
+	}
+	fmt.Fprintln(r.out, "|")
+
+	for i := range values {
+		for j := 0; j < width; j++ {
+			fmt.Fprintf(r.out, "| %s", values[i][j])
+			r.writeNBytes(max[j]-len(values[i][j])+1, ' ')
+		}
+		fmt.Fprintln(r.out, "|")
 	}
 
 	return nil
