@@ -123,6 +123,7 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
+			r.out.WriteByte('\n')
 		case blackfriday.List:
 			w := linewrap.New(r.out, r.cols)
 			err := r.list(w, c)
@@ -203,14 +204,19 @@ func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 }
 
 func (r *Renderer) blockQuote(w *linewrap.Wrapper, n *blackfriday.Node) error {
-	// FIXME handle more paragraphs and nested block quotes
 	subw := w.NewEmbedded("> ", "> ")
+	first := true
 	for c := n.FirstChild; c != nil; c = c.Next {
+		if first == true {
+			first = false
+		} else {
+			subw.Newline()
+		}
+
 		if c.Type == blackfriday.Paragraph {
 			r.paragraph(subw, c)
 			subw.TerminateLine()
 		} else if c.Type == blackfriday.BlockQuote {
-			subw.Newline()
 			r.blockQuote(subw, c)
 			subw.TerminateLine()
 		} else {
