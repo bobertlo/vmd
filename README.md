@@ -26,6 +26,14 @@ column number (default: 80). There is a single space between each token.
 
 > Links are treated as a single token, because of their formatting.
 
+#### Inline Formatting
+
+```
+Inline formatting blocks include *italic*, **bold**, and `code` formatting.
+```
+
+Inline formatting blocks include *italic*, **bold**, and `code` formatting.
+
 ### Headings
 
 Headings will only be rendered in `ATX Heading` format, So they will be

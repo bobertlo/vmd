@@ -178,6 +178,32 @@ func link(n *blackfriday.Node) (string, error) {
 	return ("[" + text + "](" + dst + ")"), nil
 }
 
+// compileText joins text nodes. Takes a Node, and processes it and any
+// siblings after it, returning a formatted (string, nil) or ("", err)
+func compileInlineText(n *blackfriday.Node) (string, error) {
+	if n == nil {
+		return "", errors.New("invalid italic or bold formatting")
+	}
+	str := ""
+	for c := n; c != nil; c = c.Next {
+		if c.Type != blackfriday.Text {
+			return "", errors.New("invalid italic or bold formatting")
+		}
+		str += string(c.Literal)
+	}
+	re := regexp.MustCompile("  +")
+	str = strings.Replace(str, "\n", " ", -1)
+	return re.ReplaceAllString(str, " "), nil
+}
+
+func inlineNode(n *blackfriday.Node, delim string) (string, error) {
+	str, err := compileInlineText(n)
+	if err != nil {
+		return "", err
+	}
+	return (delim + str + delim), nil
+}
+
 func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	for c := n.FirstChild; c != nil; c = c.Next {
 		switch c.Type {
@@ -191,6 +217,18 @@ func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 			s := strings.Replace(string(c.Literal), "\n", " ", -1)
 			tokens := strings.Split(s, " ")
 			w.WriteTokens(tokens)
+		case blackfriday.Emph:
+			str, err := inlineNode(c.FirstChild, "*")
+			if err != nil {
+				return err
+			}
+			w.WriteToken(str)
+		case blackfriday.Strong:
+			str, err := inlineNode(c.FirstChild, "**")
+			if err != nil {
+				return err
+			}
+			w.WriteToken(str)
 		case blackfriday.Code:
 			w.WriteToken("`" + string(c.Literal) + "`")
 		}
