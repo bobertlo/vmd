@@ -1,4 +1,4 @@
-package markdown
+package renderer
 
 import (
 	"bytes"
@@ -14,9 +14,8 @@ import (
 
 // Renderer renders blackfriday markdown trees into []byte output
 type Renderer struct {
-	out    *bytes.Buffer
-	pretty bool
-	cols   int
+	out  *bytes.Buffer
+	cols int
 }
 
 // flattenSpaces removes all reduntant spaces from a []byte array, leaving
@@ -51,15 +50,13 @@ func ParseMarkdown(dat []byte) (*blackfriday.Node, error) {
 	return n, nil
 }
 
-// NewRenderer creates a new markdown renderer. cols specifies how many
-// columns to wrap lines at, and pretty specifies whether to format tables
-// with whitespace.
-func NewRenderer(cols int, pretty bool) *Renderer {
+// New creates a new markdown Renderer. cols specifies how many columns to
+// wrap lines at.
+func New(cols int) *Renderer {
 	buf := new(bytes.Buffer)
 	r := &Renderer{
-		out:    buf,
-		pretty: pretty,
-		cols:   80,
+		out:  buf,
+		cols: 80,
 	}
 	return r
 }
