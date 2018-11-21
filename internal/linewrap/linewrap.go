@@ -21,7 +21,7 @@ func New(w io.Writer, cols int) *Wrapper {
 }
 
 // NewPrefix creates a new Wrapper, which takes an initialPrefix for the first
-// line of output, and a prefix for following lines. As well as an io.Writer 
+// line of output, and a prefix for following lines. As well as an io.Writer
 // for output and a column wrap limit.
 func NewPrefix(writer io.Writer, cols int, initialPrefix, prefix string) *Wrapper {
 	return &Wrapper{

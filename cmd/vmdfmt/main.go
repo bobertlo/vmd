@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/bobertlo/vmd/vmdfmt/markdown"
+	"github.com/bobertlo/vmd/internal/markdown"
 	"os"
 )
 

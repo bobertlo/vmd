@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bobertlo/vmd/vmdfmt/linewrap"
+	"github.com/bobertlo/vmd/internal/linewrap"
 	"gopkg.in/bobertlo/blackfriday.v2"
 )
 
@@ -177,7 +177,7 @@ func link(n *blackfriday.Node) (string, error) {
 
 	if strings.Compare(dst, text) == 0 {
 		return ("<" + dst + ">"), nil
-	} 
+	}
 	return ("[" + text + "](" + dst + ")"), nil
 }
 
