@@ -56,7 +56,7 @@ func New(cols int) *Renderer {
 	buf := new(bytes.Buffer)
 	r := &Renderer{
 		out:  buf,
-		cols: 80,
+		cols: cols,
 	}
 	return r
 }
