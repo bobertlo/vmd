@@ -27,7 +27,6 @@ func NewPrefix(writer io.Writer, cols int, initialPrefix, prefix string) *Wrappe
 		firstLine:     true,
 		newLine:       true,
 	}
-	return nil
 }
 
 func (w *Wrapper) NewEmbedded(initialPrefix, prefix string) *Wrapper {
