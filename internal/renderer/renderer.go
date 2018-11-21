@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -204,38 +205,58 @@ func inlineNode(n *blackfriday.Node, delim string) (string, error) {
 	return (delim + str + delim), nil
 }
 
-func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
-	for c := n.FirstChild; c != nil; c = c.Next {
+// compileInline returns a string consisting of all Node n, and all of it's
+// siblings, rendered (string, nil) or ("", err)
+func compileInline(n *blackfriday.Node) (string, error) {
+	var b strings.Builder
+
+	for c := n; c != nil; c = c.Next {
 		switch c.Type {
 		case blackfriday.Link:
 			str, err := link(c)
 			if err != nil {
-				return err
+				return "", err
 			}
-			w.WriteToken(str)
+			b.WriteString(str)
 		case blackfriday.Text:
-			s := strings.Replace(string(c.Literal), "\n", " ", -1)
-			tokens := strings.Split(s, " ")
-			w.WriteTokens(tokens)
+			str := strings.Replace(string(c.Literal), "\n", " ", -1)
+			b.WriteString(str)
 		case blackfriday.Emph:
 			str, err := inlineNode(c.FirstChild, "*")
 			if err != nil {
-				return err
+				return "", err
 			}
-			w.WriteToken(str)
+			b.WriteString(str)
 		case blackfriday.Strong:
 			str, err := inlineNode(c.FirstChild, "**")
 			if err != nil {
-				return err
+				return "", err
 			}
-			w.WriteToken(str)
+			b.WriteString(str)
 		case blackfriday.Code:
-			w.WriteToken("`" + string(c.Literal) + "`")
+			b.WriteByte('`')
+			b.WriteString(string(c.Literal))
+			b.WriteByte('`')
 		}
 	}
-	w.TerminateLine()
 
+	return b.String(), nil
+}
+
+func (r *Renderer) wrapInline(w *linewrap.Wrapper, n *blackfriday.Node) error {
+	line, err := compileInline(n)
+	fmt.Fprintf(os.Stderr, line)
+	if err != nil {
+		return err
+	}
+	tokens := strings.Split(line, " ")
+	w.WriteTokens(tokens)
+	w.TerminateLine()
 	return nil
+}
+
+func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
+	return r.wrapInline(w, n.FirstChild)
 }
 
 func (r *Renderer) blockQuote(w *linewrap.Wrapper, n *blackfriday.Node) error {
