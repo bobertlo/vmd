@@ -12,6 +12,7 @@ import (
 	"gopkg.in/bobertlo/blackfriday.v2"
 )
 
+// Renderer renders blackfriday markdown trees into []byte output
 type Renderer struct {
 	out    *bytes.Buffer
 	pretty bool
@@ -176,9 +177,8 @@ func link(n *blackfriday.Node) (string, error) {
 
 	if strings.Compare(dst, text) == 0 {
 		return ("<" + dst + ">"), nil
-	} else {
-		return ("[" + text + "](" + dst + ")"), nil
-	}
+	} 
+	return ("[" + text + "](" + dst + ")"), nil
 }
 
 func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
