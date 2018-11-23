@@ -137,7 +137,12 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 		}
 	}
 
-	return r.out.Bytes(), nil
+	// remove empty newline at end of file
+	out := r.out.Bytes()
+	if out[len(out)-1] == '\n' && out[len(out)-2] == '\n' {
+		return out[:len(out)-1], nil
+	}
+	return out, nil
 }
 
 // headingText checks that n and siblings are text nodes (there shouldn't
