@@ -176,7 +176,7 @@ func link(n *blackfriday.Node) (string, error) {
 		return "", errors.New("Invalid Link Node")
 	}
 	text := string(trimFlattenSpaces(n.FirstChild.Literal))
-	text = strings.Replace(text,"\n"," ",-1)
+	text = strings.Replace(text, "\n", " ", -1)
 
 	if strings.Compare(dst, text) == 0 {
 		return ("<" + dst + ">"), nil
