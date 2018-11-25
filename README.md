@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/bobertlo/vmd.svg?branch=master)](https://travis-ci.org/bobertlo/vmd)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bobertlo/vmd)](https://goreportcard.com/report/github.com/bobertlo/vmd)
+
 # Versioned Markdown (VMD)
 
 Versioned Markdown is a [markdown](https://en.wikipedia.org/wiki/Markdown)
