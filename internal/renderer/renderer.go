@@ -139,7 +139,7 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 
 	// remove empty newline at end of file
 	out := r.out.Bytes()
-	if out[len(out)-1] == '\n' && out[len(out)-2] == '\n' {
+	if len(out) > 2 && out[len(out)-1] == '\n' && out[len(out)-2] == '\n' {
 		return out[:len(out)-1], nil
 	}
 	return out, nil
