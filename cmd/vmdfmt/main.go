@@ -1,28 +1,93 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"github.com/bobertlo/vmd/internal/renderer"
+	"io"
+	"io/ioutil"
 	"os"
 )
 
-func main() {
-	cols := flag.Int("cols", 80, "number of columns to wrap output")
-	flag.Parse()
+var (
+	cols  = flag.Int("cols", 80, "number of columns to wrap output")
+	write = flag.Bool("w", false, "write results to (source) file instead of stdout")
+	list  = flag.Bool("l", false, "list files with modifications")
+)
 
-	if flag.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: vmdfmt [-cols n] <file.md>")
-		os.Exit(1)
+func usage() {
+	fmt.Fprintln(os.Stderr, "usage: vmdfmt [flags] [path ...]")
+	flag.PrintDefaults()
+}
+
+func processFile(path string, in io.Reader, out io.Writer) error {
+	var perm os.FileMode = 0644
+	if in == nil {
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		fi, err := f.Stat()
+		if err != nil {
+			return err
+		}
+		in = f
+		perm = fi.Mode().Perm()
 	}
-	path := flag.Arg(0)
+
+	input, err := ioutil.ReadAll(in)
+	if err != nil {
+		return err
+	}
 
 	r := renderer.New(*cols)
-	buf, err := r.RenderFile(path)
-
+	output, err := r.RenderBytes(input)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
-		os.Exit(1)
+		return err
 	}
-	os.Stdout.Write(buf)
+
+	if !bytes.Equal(output, input) {
+		if *list {
+			fmt.Fprintln(out, path)
+		}
+		if *write {
+			err = ioutil.WriteFile(path, output, perm)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if !*write && !*list {
+		out.Write(output)
+	}
+
+	return nil
+}
+
+func main() {
+	flag.Usage = usage
+	flag.Parse()
+
+	if flag.NArg() == 0 {
+		if *write {
+			fmt.Fprintln(os.Stderr, "error: cannot use -w when reading stdin")
+			os.Exit(1)
+		}
+		err := processFile("<stdin>", os.Stdin, os.Stdout)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s", err)
+			os.Exit(1)
+		}
+	}
+
+	for _, f := range flag.Args() {
+		err := processFile(f, nil, os.Stdout)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s", err)
+			os.Exit(1)
+		}
+	}
 }

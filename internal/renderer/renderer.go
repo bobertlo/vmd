@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"regexp"
 	"strings"
@@ -70,6 +71,17 @@ func (r *Renderer) RenderFile(path string) ([]byte, error) {
 	}
 
 	return r.Render(n)
+}
+
+// RenderInput renders a markdown file (from io.Reader in), returning a
+// formatted slice ([]byte,nil), or (nil,err) if an error occurs
+func (r *Renderer) RenderInput(in io.Reader) ([]byte, error) {
+	buf, err := ioutil.ReadAll(in)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.RenderBytes(buf)
 }
 
 // RenderBytes parses a markdown document in a []byte and renders it,
