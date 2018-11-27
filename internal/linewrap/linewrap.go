@@ -62,7 +62,7 @@ func (w *Wrapper) WriteToken(token string) {
 		w.out.Write([]byte(w.prefix))
 		w.out.Write([]byte(token))
 		w.newLine = false
-		w.count += len(w.initialPrefix)
+		w.count += len(w.prefix)
 		w.count += len(token)
 		if w.count > w.cols {
 			w.out.Write([]byte("\n"))
@@ -111,8 +111,10 @@ func (w *Wrapper) TerminateLine() {
 func (w *Wrapper) Newline() {
 	if w.firstLine {
 		w.out.Write([]byte(w.initialPrefix))
+		w.count += len(w.initialPrefix)
 	} else if w.newLine {
 		w.out.Write([]byte(w.prefix))
+		w.count += len(w.prefix)
 	}
 	w.out.Write([]byte("\n"))
 	w.count = 0
