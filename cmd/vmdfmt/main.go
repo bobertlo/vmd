@@ -78,7 +78,7 @@ func main() {
 		}
 		err := processFile("<stdin>", os.Stdin, os.Stdout)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %s", err)
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
 			os.Exit(1)
 		}
 	}
@@ -86,7 +86,7 @@ func main() {
 	for _, f := range flag.Args() {
 		err := processFile(f, nil, os.Stdout)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %s", err)
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
 			os.Exit(1)
 		}
 	}
