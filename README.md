@@ -8,25 +8,34 @@ specification tailored to group collaboration on documents. A key component of
 this project is a formatting tool, similar to `go fmt`, which can parse markdown
 into a tree, and re-render it in a standard and stable output format.
 
-> The reference implementation is a go library that utilizes the
-> [blackfriday.v2](https://github.com/russross/blackfriday/tree/v2) markdown
-> library to parse a robust segment of markdown formats into a standard output.
-> See `vmdfmt`.
+## vmdfmt Auto Formatter
+
+The included `vmdfmt` formatter tool works very similiarly to the `gofmt` tool
+included with go. It will format files given as arguments, with the following
+flags:
+
+- `-w`: write changes back to source files, instead of `stdout`.
+- `-l`: list files which have been changed. If `-w` is not active, it will only
+   output the list of files with changes, and not write the formatted changes
+   anywhere.
+- `-cols int`: change the number of columns to wrap lines at (default: 80.)
+
+`vmdfmt` uses the
+[blackfriday.v2](https://github.com/russross/blackfriday/tree/v2) markdown
+library to parse a large set of input markdown formats, but emits the parsed AST
+in single output format.
 
 ## Versioned Markdown Specification
 
-This is a basic specification of the Versioned Markdown ouput format. On the
-root level of the document, each of these elements must have exactly one empty
-line between it and the next element. An output file will end with an empty
-line.
+After parsing a document, the formatter will emit each of the following top
+level blocks from the AST. Each block will have a single blank line between
+them, with no black newline at the end of the file.
 
 ### Paragraphs
 
 Paragraphs are formatted as a collection of words (and punctuation) with inline
 formatting, emitted as tokens, which are line wrapped at a predefined column
 number (default: 80). There is a single space between each token.
-
-> Links are treated as a single token, because of their formatting.
 
 #### Inline Formatting
 
@@ -35,6 +44,32 @@ Inline formatting blocks include *italic*, **bold**, and `code` formatting.
 ```
 
 Inline formatting blocks include *italic*, **bold**, and `code` formatting.
+
+These formatting blocks will be parsed inline as a single output string with
+their siblings. Then the formatter wraps the lines at spaces if they are in an
+appropriate parent container.
+
+#### Links
+
+Links whose text are the same as their content can be represented in this way:
+
+```
+<http://www.example.com/>
+```
+
+<http://www.example.com/>
+
+And links with description text which is not the url itself, will be written as:
+
+```
+[descriptive text](http://www.example.com/)
+```
+
+[descriptive text](http://www.example.com/)
+
+Links are treated as a single token, because of their formatting. If their
+descriptive text contains spaces they may be linewrapped, otherwise they are an
+exception to the linewrapping rule.
 
 ### Headings
 
@@ -45,11 +80,9 @@ as:
 # <heading level 1 text>
 
 ## <heading level 2 text>
-
-etc.
 ```
 
-> Note: Heading bodies may only contain plain text.
+> Note: Heading bodies may not contain inline formatting, only text.
 
 ### Block Quotes
 
@@ -62,12 +95,12 @@ Block quotes may only contain content which is valid in paragraphs, in addition
 to nested block quotes.
 
 > Note: Block Quotes next to eachother with empty lines are parsed as a single
-> block quote. This is not a style issue, but inherited from the *blackfriday*
-> parser.
+> block quote. This is not a style issue, but inherited from the
+> *blackfriday.v2* parser.
 
 ### Code Blocks
 
-The only output format accepted is the `backtick` format, shown as follows:
+Code blocks will only be emitted in the `backtick` format, shown as follows:
 
 ``````
 ```
@@ -126,30 +159,6 @@ Tables have the following format:
 
 > Note: tables are an exception to the line wrapping rule. Their formatting is
 > line based so they cannot be wrapped
-
-### Links
-
-Links are simple and have two representations.
-
-Links whose text are the same as their content can be represented in this way:
-
-```
-<http://www.example.com/>
-```
-
-<http://www.example.com/>
-
-And links with description text which is not the url itself, will be written as:
-
-```
-[descriptive text](http://www.example.com/)
-```
-
-[descriptive text](http://www.example.com/)
-
-No other format of links is supported.
-
-> Note: links are another exemption to the line wrapping rule.
 
 ### Lists
 
@@ -211,5 +220,6 @@ be mixed.
    - tres
    - trois
 
-> Note: list inputs must have at least 3 columns of indentation. this is not a
-> style issue, but rather a limitation of the *blackfriday* markdown parser.
+> Note: list inputs must have at least 3 columns of indentation when wrapping
+> lines or creating sublists. This is not a style issue, but another limitation
+> inherited from the *blackfriday* markdown parser.
