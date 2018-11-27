@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -146,6 +147,8 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
+		default:
+			fmt.Fprintf(os.Stderr, "warning: unsupported node type %s ignored\n", c.Type)
 		}
 	}
 
@@ -153,6 +156,9 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 	out := r.out.Bytes()
 	if len(out) > 2 && out[len(out)-1] == '\n' && out[len(out)-2] == '\n' {
 		return out[:len(out)-1], nil
+	}
+	if len(out) == 1 && (out[0] == '\n' || out[0] == ' ') {
+		return []byte(""), nil
 	}
 	return out, nil
 }
@@ -257,8 +263,24 @@ func compileInline(n *blackfriday.Node) (string, error) {
 			b.WriteString(str)
 		case blackfriday.Code:
 			b.WriteByte('`')
-			b.WriteString(string(c.Literal))
+			str := strings.Replace(string(c.Literal), "\n", " ", -1)
+			b.WriteString(str)
 			b.WriteByte('`')
+		default:
+			fmt.Fprintf(os.Stderr, "warning: unsupported node type %s ignored\n", c.Type)
+		}
+	}
+
+	return b.String(), nil
+}
+
+func compileLinkText(n *blackfriday.Node) (string, error) {
+	var b strings.Builder
+
+	for c := n; c != nil; c = c.Next {
+		switch c.Type {
+		default:
+			fmt.Fprintf(os.Stderr, "warning: unsupported node type %s ignored\n", c.Type)
 		}
 	}
 
