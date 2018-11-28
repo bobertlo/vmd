@@ -195,11 +195,14 @@ func (r *Renderer) heading(n *blackfriday.Node) error {
 
 func link(n *blackfriday.Node) (string, error) {
 	dst := string(n.LinkData.Destination)
-	if n.FirstChild == nil || n.FirstChild.Type != blackfriday.Text {
+	if n.FirstChild == nil {
 		return "", errors.New("Invalid Link Node")
 	}
-	text := string(trimFlattenSpaces(n.FirstChild.Literal))
-	text = strings.Replace(text, "\n", " ", -1)
+
+	text, err := compileInline(n.FirstChild)
+	if err != nil {
+		return "", err
+	}
 
 	if strings.Compare(dst, text) == 0 {
 		return ("<" + dst + ">"), nil
@@ -241,6 +244,9 @@ func compileInline(n *blackfriday.Node) (string, error) {
 	for c := n; c != nil; c = c.Next {
 		switch c.Type {
 		case blackfriday.Link:
+			if c.Parent.Type == blackfriday.Link {
+				return "", errors.New("link text may not contain links")
+			}
 			str, err := link(c)
 			if err != nil {
 				return "", err
@@ -266,19 +272,6 @@ func compileInline(n *blackfriday.Node) (string, error) {
 			str := strings.Replace(string(c.Literal), "\n", " ", -1)
 			b.WriteString(str)
 			b.WriteByte('`')
-		default:
-			fmt.Fprintf(os.Stderr, "warning: unsupported node type %s ignored\n", c.Type)
-		}
-	}
-
-	return b.String(), nil
-}
-
-func compileLinkText(n *blackfriday.Node) (string, error) {
-	var b strings.Builder
-
-	for c := n; c != nil; c = c.Next {
-		switch c.Type {
 		default:
 			fmt.Fprintf(os.Stderr, "warning: unsupported node type %s ignored\n", c.Type)
 		}
