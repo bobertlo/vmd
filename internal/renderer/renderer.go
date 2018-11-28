@@ -27,6 +27,8 @@ func flattenSpaces(str []byte) []byte {
 	return re.ReplaceAll(str, []byte(" "))
 }
 
+// trimFlattenSpaces removes all redundant spaces from a string, as well as
+// any exterior spaces
 func trimFlattenSpaces(str []byte) []byte {
 	return bytes.TrimSpace(flattenSpaces(str))
 }
@@ -193,6 +195,7 @@ func (r *Renderer) heading(n *blackfriday.Node) error {
 	return nil
 }
 
+// link renders a Link node into a string
 func link(n *blackfriday.Node) (string, error) {
 	dst := string(n.LinkData.Destination)
 	if n.FirstChild == nil {
@@ -228,6 +231,8 @@ func compileInlineText(n *blackfriday.Node) (string, error) {
 	return re.ReplaceAllString(str, " "), nil
 }
 
+// inlineNode compiles the text inside a nodes children, and returns
+// a string deliminated by the string "delim"
 func inlineNode(n *blackfriday.Node, delim string) (string, error) {
 	str, err := compileInlineText(n)
 	if err != nil {
@@ -280,6 +285,9 @@ func compileInline(n *blackfriday.Node) (string, error) {
 	return b.String(), nil
 }
 
+// wrapInline renders a node and all following children into a string, then
+// tokenizes it based on whitespace and emits those tokens using a linewrapper,
+// which is supplied to support recursion in lists and other types of blocks
 func (r *Renderer) wrapInline(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	line, err := compileInline(n)
 	if err != nil {
@@ -298,6 +306,8 @@ func (r *Renderer) paragraph(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	return r.wrapInline(w, n.FirstChild)
 }
 
+// blockQuote takes a BlockQuote node, and emits it. Only paragraphs and
+// embedded BlockQuote nodes are admitted
 func (r *Renderer) blockQuote(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	subw := w.NewEmbedded("> ", "> ")
 	first := true
@@ -321,6 +331,7 @@ func (r *Renderer) blockQuote(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	return nil
 }
 
+// codeBlock emits a CodeBlock node.
 func (r *Renderer) codeBlock(n *blackfriday.Node) {
 	fenceLength := 3
 	if n.CodeBlockData.IsFenced && n.CodeBlockData.FenceLength > 0 {
@@ -334,6 +345,7 @@ func (r *Renderer) codeBlock(n *blackfriday.Node) {
 	r.out.WriteByte('\n')
 }
 
+// list emits a list, including any sublists recursively to a linewrap writer
 func (r *Renderer) list(w *linewrap.Wrapper, n *blackfriday.Node) error {
 	ordered := n.ListData.ListFlags&blackfriday.ListTypeOrdered > 0
 	index := 1
