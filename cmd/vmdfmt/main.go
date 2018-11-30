@@ -8,11 +8,13 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 var (
 	cols  = flag.Int("cols", 80, "number of columns to wrap output")
-	write = flag.Bool("w", false, "write results to (source) file instead of stdout")
+	write = flag.Bool("w", false, "write changes to (source) file")
 	list  = flag.Bool("l", false, "list files with modifications")
 )
 
@@ -67,6 +69,29 @@ func processFile(path string, in io.Reader, out io.Writer) error {
 	return nil
 }
 
+func isMarkdownFile(f os.FileInfo) bool {
+	if f.IsDir() {
+		return false
+	}
+	return strings.HasSuffix(f.Name(), ".md")
+}
+
+func walkFile(path string, f os.FileInfo, err error) error {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	if isMarkdownFile(f) {
+		err := processFile(path, nil, os.Stdout)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}
+
+	return nil
+}
+
 func main() {
 	flag.Usage = usage
 	flag.Parse()
@@ -84,10 +109,19 @@ func main() {
 	}
 
 	for _, f := range flag.Args() {
-		err := processFile(f, nil, os.Stdout)
+		dir, err := os.Stat(f)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
+		}
+		if dir.IsDir() {
+			filepath.Walk(f, walkFile)
+		} else {
+			err := processFile(f, nil, os.Stdout)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error: %s\n", err)
+				os.Exit(1)
+			}
 		}
 	}
 }
