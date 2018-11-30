@@ -1,5 +1,7 @@
-[![Build Status](https://travis-ci.org/bobertlo/vmd.svg?branch=master)](https://travis-ci.org/bobertlo/vmd)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bobertlo/vmd)](https://goreportcard.com/report/github.com/bobertlo/vmd)
+[![Build
+Status](https://travis-ci.org/bobertlo/vmd.svg?branch=master)](https://travis-ci.org/bobertlo/vmd)
+[![Go Report
+Card](https://goreportcard.com/badge/github.com/bobertlo/vmd)](https://goreportcard.com/report/github.com/bobertlo/vmd)
 
 # Versioned Markdown (VMD)
 
@@ -70,6 +72,16 @@ And links with description text which is not the url itself, will be written as:
 Links are treated as a single token, because of their formatting. If their
 descriptive text contains spaces they may be linewrapped, otherwise they are an
 exception to the linewrapping rule.
+
+#### Images
+
+Images are supported with the following format:
+
+```
+![descriptive text](http://www.example.org/logo.jpg)
+```
+
+The discriptive text may not contain any formatting, only plain text.
 
 ### Headings
 

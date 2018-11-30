@@ -213,6 +213,21 @@ func link(n *blackfriday.Node) (string, error) {
 	return ("[" + text + "](" + dst + ")"), nil
 }
 
+// image renders an Image node into a string
+func image(n *blackfriday.Node) (string, error) {
+	dst := string(n.LinkData.Destination)
+	if n.FirstChild == nil {
+		return "", errors.New("Invalid Image node")
+	}
+
+	text, err := compileInlineText(n.FirstChild)
+	if err != nil {
+		return "", err
+	}
+
+	return ("![" + text + "](" + dst + ")"), nil
+}
+
 // compileText joins text nodes. Takes a Node, and processes it and any
 // siblings after it, returning a formatted (string, nil) or ("", err)
 func compileInlineText(n *blackfriday.Node) (string, error) {
@@ -253,6 +268,12 @@ func compileInline(n *blackfriday.Node) (string, error) {
 				return "", errors.New("link text may not contain links")
 			}
 			str, err := link(c)
+			if err != nil {
+				return "", err
+			}
+			b.WriteString(str)
+		case blackfriday.Image:
+			str, err := image(c)
 			if err != nil {
 				return "", err
 			}
