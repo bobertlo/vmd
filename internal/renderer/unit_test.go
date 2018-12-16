@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"bytes"
+	"io/ioutil"
 	"testing"
 )
 
@@ -45,5 +46,39 @@ func TestFlatten(t *testing.T) {
 	}
 }
 
-func TestParagraph(t *testing.T) {
+func TestBytes(t *testing.T) {
+	r := New(80)
+	out, err := r.RenderBytes([]byte("<p>html not supported</p>"))
+	if err == nil || out != nil {
+		t.Error("bytes failed")
+	}
+	out, err = r.RenderBytes([]byte(""))
+	if err != nil || out != nil {
+		t.Error("bytes failed")
+	}
+	out, err = r.RenderBytes([]byte(" \n \n"))
+	if err != nil || out != nil {
+		t.Error("bytes failed")
+	}
+}
+
+func TestRender(t *testing.T) {
+	r := New(80)
+	src, err := ioutil.ReadFile("testfiles/README.md")
+	if err != nil {
+		t.Error("read error")
+	}
+
+	fout, err := r.RenderFile("testfiles/README.md")
+	if err != nil {
+		t.Error("RenderFile failed")
+	}
+	if bytes.Compare(src, fout) != 0 {
+		t.Error("RenderFile inconsistent")
+	}
+
+	fout, err = r.RenderFile("testfiles/nonexistantfile.go")
+	if fout != nil || err == nil {
+		t.Error("invalid handling of nonexistant file")
+	}
 }

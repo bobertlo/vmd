@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"os"
 	"regexp"
 	"strings"
 
@@ -76,17 +74,6 @@ func (r *Renderer) RenderFile(path string) ([]byte, error) {
 	return r.Render(n)
 }
 
-// RenderInput renders a markdown file (from io.Reader in), returning a
-// formatted slice ([]byte,nil), or (nil,err) if an error occurs
-func (r *Renderer) RenderInput(in io.Reader) ([]byte, error) {
-	buf, err := ioutil.ReadAll(in)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.RenderBytes(buf)
-}
-
 // RenderBytes parses a markdown document in a []byte and renders it,
 // returning a formatted document in a []byte. Returns ([]byte,nil) or
 // (nil,err)
@@ -150,7 +137,7 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 				return nil, err
 			}
 		default:
-			fmt.Fprintf(os.Stderr, "warning: unsupported node type %s ignored\n", c.Type)
+			return nil, fmt.Errorf("unsupported node type %s ignored", c.Type)
 		}
 	}
 
@@ -299,7 +286,7 @@ func compileInline(n *blackfriday.Node) (string, error) {
 			b.WriteString(str)
 			b.WriteByte('`')
 		default:
-			fmt.Fprintf(os.Stderr, "warning: unsupported node type %s ignored\n", c.Type)
+			return "", fmt.Errorf("Unsupported node type %s ignored", c.Type)
 		}
 	}
 
