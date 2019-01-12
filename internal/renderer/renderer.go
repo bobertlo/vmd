@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/bobertlo/vmd/internal/linewrap"
-	"gopkg.in/bobertlo/blackfriday.v2"
+	blackfriday "gopkg.in/bobertlo/blackfriday.v2"
 )
 
 // Renderer renders blackfriday markdown trees into []byte output
