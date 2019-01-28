@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bobertlo/vmd/internal/renderer"
+	"github.com/bobertlo/vmd/pkg/mdformatter"
 )
 
 var (
@@ -45,8 +45,8 @@ func processFile(path string, in io.Reader, out io.Writer) error {
 		return err
 	}
 
-	r := renderer.New(*cols)
-	output, err := r.RenderBytes(input)
+	md := mdformatter.New(*cols)
+	output, err := md.RenderBytes(input)
 	if err != nil {
 		return err
 	}

@@ -27,6 +27,23 @@ flags:
 library to parse a large set of input markdown formats, but emits the parsed AST
 in single output format.
 
+## VMD mdformatter package
+
+Also included is the `mdformatter` package, which exposes a very simple
+interface to render markdown. It may be imported from:
+
+```
+github.com/bobertlo/vmd/pkg/mdformatter
+```
+
+To render a `[]byte` slice of markdown, returning a formatted `[]byte` slice,
+for example:
+
+```
+md := mdformatter.New(80) // New takes the column number to wrap at
+out, err := md.RenderBytes(input)
+```
+
 ## Versioned Markdown Specification
 
 After parsing a document, the formatter will emit each of the following top
