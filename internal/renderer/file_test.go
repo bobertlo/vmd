@@ -4,57 +4,63 @@ import (
 	"bufio"
 	"bytes"
 	"io/ioutil"
+	"path"
 	"testing"
 )
 
-func TestReadme(t *testing.T) {
-	src, err := ioutil.ReadFile("testfiles/README.md")
-	if err != nil {
-		t.Error("could not load README.md")
-	}
+const testPath = "testfiles/"
 
-	r := New(80)
+var verbatimFiles = []string{"README.md", "blockquote-codeblock.md"}
+var columnFiles = []string{"lorem.md", "lorem-list.md", "lorem-blocks.md"}
 
-	out, err := r.RenderBytes(src)
-	if err != nil {
-		t.Error("Failed to render README.md")
-	}
+func TestFiles(t *testing.T) {
+	for _, f := range verbatimFiles {
+		t.Run(f, func(t *testing.T) {
+			src, err := ioutil.ReadFile(path.Join(testPath, f))
+			if err != nil {
+				t.Error("could not load")
+			}
 
-	if bytes.Compare(src, out) != 0 {
-		t.Error("Inconsistency in rendered README.md")
+			r := New(80)
+			out, err := r.RenderBytes(src)
+			if err != nil {
+				t.Error("Failed to render")
+			}
+
+			if bytes.Compare(src, out) != 0 {
+				t.Error("Inconsistency in render")
+			}
+		})
 	}
 }
 
 func TestColumns(t *testing.T) {
-	var files [3]string
-	files[0] = "testfiles/lorem.md"
-	files[1] = "testfiles/lorem-list.md"
-	files[2] = "testfiles/lorem-blocks.md"
-
-	for i := range files {
-		src, err := ioutil.ReadFile(files[i])
-		if err != nil {
-			t.Error("could not load test file")
-		}
-
-		for c := 30; c < 101; c += 10 {
-			r := New(c)
-
-			out, err := r.RenderBytes(src)
+	for _, f := range columnFiles {
+		t.Run(f, func(t *testing.T) {
+			src, err := ioutil.ReadFile(path.Join(testPath, f))
 			if err != nil {
-				t.Error(err)
+				t.Error("could not load test file")
 			}
 
-			scanner := bufio.NewScanner(bytes.NewReader(out))
-			for scanner.Scan() {
-				if len(scanner.Text()) > c {
-					t.Error("line too long")
+			for c := 30; c < 101; c += 10 {
+				r := New(c)
+
+				out, err := r.RenderBytes(src)
+				if err != nil {
+					t.Error(err)
+				}
+
+				scanner := bufio.NewScanner(bytes.NewReader(out))
+				for scanner.Scan() {
+					if len(scanner.Text()) > c {
+						t.Error("line too long")
+					}
+				}
+				err = scanner.Err()
+				if err != nil {
+					t.Error(err)
 				}
 			}
-			err = scanner.Err()
-			if err != nil {
-				t.Error(err)
-			}
-		}
+		})
 	}
 }
