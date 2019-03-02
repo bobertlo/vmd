@@ -116,7 +116,8 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 			}
 			w.Newline()
 		case blackfriday.CodeBlock:
-			r.codeBlock(c)
+			w := linewrap.New(r.out, r.cols)
+			r.codeBlock(w, c)
 		case blackfriday.BlockQuote:
 			w := linewrap.New(r.out, r.cols)
 			err := r.blockQuote(w, c)
@@ -332,6 +333,9 @@ func (r *Renderer) blockQuote(w *linewrap.Wrapper, n *blackfriday.Node) error {
 		} else if c.Type == blackfriday.BlockQuote {
 			r.blockQuote(subw, c)
 			subw.TerminateLine()
+		} else if c.Type == blackfriday.CodeBlock {
+			r.codeBlock(subw, c)
+			subw.TerminateLine()
 		} else {
 			return errors.New("BlockQuotes may only contain paragraphs or BlockQuotes")
 		}
@@ -340,17 +344,24 @@ func (r *Renderer) blockQuote(w *linewrap.Wrapper, n *blackfriday.Node) error {
 }
 
 // codeBlock emits a CodeBlock node.
-func (r *Renderer) codeBlock(n *blackfriday.Node) {
+func (r *Renderer) codeBlock(w *linewrap.Wrapper, n *blackfriday.Node) {
 	fenceLength := 3
 	if n.CodeBlockData.IsFenced && n.CodeBlockData.FenceLength > 0 {
 		fenceLength = n.CodeBlockData.FenceLength
 	}
-	r.writeNBytes(fenceLength, '`')
-	r.out.WriteByte('\n')
-	r.out.Write(n.Literal)
-	r.writeNBytes(fenceLength, '`')
-	r.out.WriteByte('\n')
-	r.out.WriteByte('\n')
+	w.WriteNBytes(fenceLength, '`')
+	w.Newline()
+	lines := bytes.Split(n.Literal, []byte{'\n'})
+	for _, b := range lines[:len(lines)-1] {
+		if b == nil {
+			continue
+		}
+		w.Write(b)
+		w.Newline()
+	}
+	w.WriteNBytes(fenceLength, '`')
+	w.Newline()
+	w.Newline()
 }
 
 // list emits a list, including any sublists recursively to a linewrap writer

@@ -51,8 +51,7 @@ func (w *Wrapper) WriteToken(token string) {
 		w.out.Write([]byte(token))
 		w.firstLine = false
 		w.newLine = false
-		w.count += len(w.initialPrefix)
-		w.count += len(token)
+		w.count += len(w.initialPrefix) + len(token)
 		if w.count > w.cols {
 			w.out.Write([]byte("\n"))
 			w.count = 0
@@ -62,8 +61,7 @@ func (w *Wrapper) WriteToken(token string) {
 		w.out.Write([]byte(w.prefix))
 		w.out.Write([]byte(token))
 		w.newLine = false
-		w.count += len(w.prefix)
-		w.count += len(token)
+		w.count += len(w.prefix) + len(token)
 		if w.count > w.cols {
 			w.out.Write([]byte("\n"))
 			w.count = 0
@@ -87,6 +85,57 @@ func (w *Wrapper) WriteToken(token string) {
 				w.newLine = true
 			}
 		}
+	}
+}
+
+// WriteByte writes a single byte to the output, and writes prefixes if
+// necessary, but DOES NOT wrap lines until tokens are added after the bytes
+func (w *Wrapper) WriteByte(c byte) error {
+	// this is just a hack for codeblocks in blockquotes
+	if w.firstLine {
+		w.out.Write([]byte(w.initialPrefix))
+		w.out.Write([]byte{c})
+		w.firstLine = false
+		w.newLine = false
+		w.count += len(w.initialPrefix) + 1
+	} else if w.newLine {
+		w.out.Write([]byte(w.prefix))
+		w.out.Write([]byte{c})
+		w.newLine = false
+		w.count += len(w.prefix) + 1
+	} else {
+		w.out.Write([]byte{c})
+		w.count++
+	}
+	return nil // just a hack...
+}
+
+// Write writes []byte b to the output, and writes prefixes if necessary,
+// but DOES NOT wrap lines until other tokens are added after the bytes
+func (w *Wrapper) Write(b []byte) {
+	// this is just a hack for codeblocks in blockquotes
+	if w.firstLine {
+		w.out.Write([]byte(w.initialPrefix))
+		w.out.Write(b)
+		w.firstLine = false
+		w.newLine = false
+		w.count += len(w.initialPrefix) + len(b)
+	} else if w.newLine {
+		w.out.Write([]byte(w.prefix))
+		w.out.Write(b)
+		w.newLine = false
+		w.count += len(w.prefix) + len(b)
+	} else {
+		w.out.Write(b)
+		w.count += len(b)
+	}
+}
+
+// WriteNBytes writes c n times, with prefixes if necessary, BUT NOT
+// linewrapping unless other tokens are written
+func (w *Wrapper) WriteNBytes(n int, c byte) {
+	for i := 0; i < n; i++ {
+		w.WriteByte(c)
 	}
 }
 
