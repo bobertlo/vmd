@@ -14,7 +14,7 @@ var verbatimFiles = []string{
 	"README.md",
 	"blockquote-codeblock.md",
 	"blockquote-issue7.md",
- }
+}
 
 var columnFiles = []string{"lorem.md", "lorem-list.md", "lorem-blocks.md"}
 
