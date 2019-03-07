@@ -1,3 +1,5 @@
+0.0.6 - 07 Mar 2019
+ - fix issue #7 - strange bug in parsing of codeblock inside of blockquote
 0.0.5 - 02 Mar 2019
  - fix handling of codeblock inside blockquotes
 0.0.4 - 28 Jan 2019
