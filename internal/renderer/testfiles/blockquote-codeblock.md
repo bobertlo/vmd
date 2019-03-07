@@ -4,7 +4,6 @@
 > This is a codeblock
 > test test test
 > ```
-> 
 
 There needs to be a paragraph inbetween
 
@@ -15,7 +14,6 @@ There needs to be a paragraph inbetween
 > > ```
 > > with a codeblock inside of it
 > > ```
-> > 
 
 There still needs to be a paragraph inbetween
 

@@ -118,6 +118,7 @@ func (r *Renderer) Render(root *blackfriday.Node) ([]byte, error) {
 		case blackfriday.CodeBlock:
 			w := linewrap.New(r.out, r.cols)
 			r.codeBlock(w, c)
+			r.out.WriteByte('\n')
 		case blackfriday.BlockQuote:
 			w := linewrap.New(r.out, r.cols)
 			err := r.blockQuote(w, c)
@@ -361,7 +362,7 @@ func (r *Renderer) codeBlock(w *linewrap.Wrapper, n *blackfriday.Node) {
 	}
 	w.WriteNBytes(fenceLength, '`')
 	w.Newline()
-	w.Newline()
+	//w.Newline()
 }
 
 // list emits a list, including any sublists recursively to a linewrap writer
