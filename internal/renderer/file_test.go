@@ -10,7 +10,12 @@ import (
 
 const testPath = "testfiles/"
 
-var verbatimFiles = []string{"README.md", "blockquote-codeblock.md"}
+var verbatimFiles = []string{
+	"README.md",
+	"blockquote-codeblock.md",
+	"blockquote-issue7.md",
+ }
+
 var columnFiles = []string{"lorem.md", "lorem-list.md", "lorem-blocks.md"}
 
 func TestFiles(t *testing.T) {
