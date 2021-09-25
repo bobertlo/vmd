@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/bobertlo/vmd/internal/linewrap"
 	blackfriday "gopkg.in/bobertlo/blackfriday.v2"
@@ -487,7 +488,7 @@ func (r *Renderer) table(n *blackfriday.Node) error {
 	// output table head
 	for i := 0; i < width; i++ {
 		fmt.Fprintf(r.out, "| %s", headData[i])
-		r.writeNBytes(max[i]-len(headData[i])+1, ' ')
+		r.writeNBytes(max[i]-utf8.RuneCountInString(headData[i])+1, ' ')
 	}
 	fmt.Fprintln(r.out, "|")
 
@@ -500,7 +501,7 @@ func (r *Renderer) table(n *blackfriday.Node) error {
 	for i := range values {
 		for j := 0; j < width; j++ {
 			fmt.Fprintf(r.out, "| %s", values[i][j])
-			r.writeNBytes(max[j]-len(values[i][j])+1, ' ')
+			r.writeNBytes(max[j]-utf8.RuneCountInString(values[i][j])+1, ' ')
 		}
 		fmt.Fprintln(r.out, "|")
 	}
