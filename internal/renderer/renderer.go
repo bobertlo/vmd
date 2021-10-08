@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	blackfriday "github.com/bobertlo/blackfriday/v2"
 	"github.com/bobertlo/vmd/internal/linewrap"
-	blackfriday "gopkg.in/bobertlo/blackfriday.v2"
 )
 
 // Renderer renders blackfriday markdown trees into []byte output
